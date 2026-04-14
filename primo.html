@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Admin Panel | Florida Pick 2 - Gestor Completo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: linear-gradient(135deg, #0a0f1e 0%, #0c1222 100%); font-family: 'Inter', sans-serif; color: #f0f3fa; padding: 1rem; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header h1 { background: linear-gradient(135deg, #FF4500, #FF8C00, #FFD700); background-clip: text; -webkit-background-clip: text; color: transparent; font-size: 1.8rem; }
+        .login-box { max-width: 400px; margin: 3rem auto; background: rgba(15, 25, 45, 0.4); backdrop-filter: blur(15px); border-radius: 1.5rem; padding: 2rem; border: 1px solid rgba(255, 140, 0, 0.3); }
+        input, select, textarea { width: 100%; padding: 0.8rem; margin: 0.5rem 0; background: rgba(15, 20, 34, 0.8); border: 1px solid rgba(42, 53, 86, 0.8); border-radius: 0.8rem; color: white; font-size: 1rem; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #FF8C00; }
+        button { background: linear-gradient(135deg, #FF8C00, #FF4500); border: none; padding: 0.8rem 1.5rem; border-radius: 2rem; font-weight: 600; color: white; cursor: pointer; width: 100%; margin-top: 0.5rem; transition: all 0.3s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255, 140, 0, 0.4); }
+        .btn-secondary { background: #28a745; }
+        .btn-info { background: #007bff; }
+        .admin-panel { display: none; }
+        .card { background: rgba(15, 25, 45, 0.4); backdrop-filter: blur(12px); border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 2rem; border: 1px solid rgba(255, 140, 0, 0.2); }
+        .card h2 { color: #FF8C00; margin-bottom: 1rem; border-bottom: 1px solid rgba(255, 140, 0, 0.3); padding-bottom: 0.5rem; }
+        .numbers-container { background: rgba(26, 35, 53, 0.6); border-radius: 1rem; padding: 1rem; margin: 1rem 0; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem; }
+        .category-title { font-size: 1rem; font-weight: bold; }
+        .strong-title { color: #FFD700; }
+        .medium-title { color: #C0C0C0; }
+        .tactical-title { color: #CD7F32; }
+        .numbers-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; min-height: 60px; }
+        .number-badge { background: rgba(15, 20, 34, 0.8); border-radius: 2rem; padding: 0.4rem 0.8rem; font-size: 0.9rem; font-weight: bold; display: inline-flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(255, 140, 0, 0.5); }
+        .number-badge button { background: #ff4444; width: auto; padding: 0.1rem 0.4rem; margin: 0; font-size: 0.7rem; border-radius: 50%; }
+        .btn-select-number { background: #007bff; width: auto; padding: 0.4rem 1rem; margin: 0; font-size: 0.8rem; }
+        .btn-send { background: #007bff; margin-top: 1rem; }
+        .btn-win { background: #28a745; margin-top: 1rem; }
+        .current-status { background: rgba(26, 35, 53, 0.6); padding: 0.8rem; border-radius: 1rem; margin-bottom: 1rem; font-size: 0.85rem; }
+        .user-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0.8rem 1rem; background: rgba(0, 0, 0, 0.3); border-radius: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+        .logout-btn { background: rgba(255, 68, 68, 0.2); border: 1px solid #ff4444; padding: 0.4rem 1rem; border-radius: 2rem; cursor: pointer; width: auto; }
+        .tab-buttons { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .tab-btn { background: rgba(26, 35, 53, 0.6); width: auto; padding: 0.5rem 1rem; margin: 0; border: 1px solid rgba(255, 140, 0, 0.3); }
+        .tab-btn.active { background: linear-gradient(135deg, #FF8C00, #FF4500); border-color: transparent; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); z-index: 1000; overflow-y: auto; }
+        .modal-content { background: rgba(26, 35, 53, 0.95); margin: 2rem auto; padding: 1.5rem; border-radius: 1.5rem; max-width: 600px; border: 1px solid rgba(255, 140, 0, 0.5); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 140, 0, 0.3); }
+        .modal-header h3 { color: #FFD700; }
+        .close-modal { background: #ff4444; width: auto; padding: 0.3rem 0.8rem; margin: 0; }
+        .numbers-grid-modal { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 0.5rem; max-height: 400px; overflow-y: auto; padding: 0.5rem; }
+        .number-option { background: rgba(15, 20, 34, 0.8); border: 1px solid rgba(42, 53, 86, 0.8); border-radius: 0.5rem; padding: 0.5rem; text-align: center; cursor: pointer; font-weight: bold; }
+        .number-option:hover { background: #FF8C00; transform: scale(1.05); }
+        .number-option.selected { background: #28a745; }
+        .selected-count { margin-top: 1rem; text-align: center; padding: 0.5rem; background: rgba(15, 20, 34, 0.8); border-radius: 0.5rem; }
+        .modal-buttons { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .winner-select { background: rgba(26, 35, 53, 0.6); padding: 0.8rem; border-radius: 0.8rem; margin: 0.5rem 0; }
+        .winner-select label { display: block; margin-bottom: 0.5rem; color: #FFD700; font-weight: bold; }
+        hr { margin: 1rem 0; border-color: rgba(42, 53, 86, 0.5); }
+        .status-msg { margin-top: 0.5rem; color: #4caf50; font-size: 0.8rem; text-align: center; }
+        .payment-request, .news-item, .resultado-item { background: rgba(26, 35, 53, 0.6); border-radius: 1rem; padding: 1rem; margin-bottom: 1rem; border-left: 3px solid #FF8C00; }
+        .btn-approve { background: #28a745; width: auto; padding: 0.3rem 1rem; margin: 0.5rem 0.5rem 0 0; display: inline-block; }
+        .btn-reject { background: #dc3545; width: auto; padding: 0.3rem 1rem; margin: 0.5rem 0 0 0; display: inline-block; }
+        .winner-history-item { background: rgba(26, 35, 53, 0.6); border-radius: 0.5rem; padding: 0.5rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .subtab-content { display: none; }
+        .subtab-content.active { display: block; }
+        .hora-info { background: rgba(26, 35, 53, 0.6); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 1rem; text-align: center; color: #FFD700; }
+        @media (max-width: 600px) { .numbers-grid-modal { grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); } .number-option { font-size: 0.8rem; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-crown"></i> Panel de Administración - Florida Pick 2</h1>
+        <p>Gestiona pronósticos, resultados (2 dígitos), noticias, pagos e historial</p>
+    </div>
+
+    <div id="loginSection">
+        <div class="login-box">
+            <h3 style="text-align:center; margin-bottom:1rem;"><i class="fas fa-lock"></i> Acceso Administrador</h3>
+            <input type="email" id="adminEmail" placeholder="Correo electrónico">
+            <input type="password" id="adminPassword" placeholder="Contraseña">
+            <button id="btnAdminLogin">Ingresar como Admin</button>
+            <div id="loginError" style="color: #ff6b6b; margin-top: 1rem; text-align: center;"></div>
+        </div>
+    </div>
+
+    <div id="adminPanel" class="admin-panel">
+        <div class="user-bar">
+            <span><i class="fas fa-user-shield"></i> <strong>Admin:</strong> <span id="adminEmailDisplay"></span></span>
+            <button class="logout-btn" id="adminLogout"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+        </div>
+
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="pronosticos">📊 Pronósticos</button>
+            <button class="tab-btn" data-tab="resultados">🎯 Resultados</button>
+            <button class="tab-btn" data-tab="noticias">📰 Noticias</button>
+            <button class="tab-btn" data-tab="pagos">💰 Pagos</button>
+            <button class="tab-btn" data-tab="historial">📜 Historial</button>
+        </div>
+
+        <div id="tabPronosticos" class="tab-content active">
+            <div class="tab-buttons" style="margin-bottom: 1rem;">
+                <button class="tab-btn active" data-subtab="sorteo8am">🌅 8:00 AM</button>
+                <button class="tab-btn" data-subtab="sorteo4pm">🌙 4:00 PM</button>
+            </div>
+
+            <div id="subtab8am" class="subtab-content active">
+                <div class="card">
+                    <h2><i class="fas fa-sun"></i> Pronóstico Sorteo 8:00 AM</h2>
+                    <div class="current-status" id="status8am"><i class="fas fa-spinner fa-pulse"></i> Cargando...</div>
+
+                    <div class="numbers-container">
+                        <div class="category-header">
+                            <span class="category-title strong-title">🔥 Números FUERTES (10 - 70%)</span>
+                            <button class="btn-select-number" onclick="openNumberModal('8am', 'strong', 10)"><i class="fas fa-plus"></i> Seleccionar 10</button>
+                        </div>
+                        <div id="strongNumbersList8am" class="numbers-list"></div>
+                    </div>
+
+                    <div class="numbers-container">
+                        <div class="category-header">
+                            <span class="category-title medium-title">⭐ Números MEDIOS (15 - 20%)</span>
+                            <button class="btn-select-number" onclick="openNumberModal('8am', 'medium', 15)"><i class="fas fa-plus"></i> Seleccionar 15</button>
+                        </div>
+                        <div id="mediumNumbersList8am" class="numbers-list"></div>
+                    </div>
+
+                    <div class="numbers-container">
+                        <div class="category-header">
+                            <span class="category-title tactical-title">🌟 Números TÁCTICOS (15 - 10%)</span>
+                            <button class="btn-select-number" onclick="openNumberModal('8am', 'tactical', 15)"><i class="fas fa-plus"></i> Seleccionar 15</button>
+                        </div>
+                        <div id="tacticalNumbersList8am" class="numbers-list"></div>
+                    </div>
+
+                    <button id="sendForecast8am" class="btn-send"><i class="fas fa-paper-plane"></i> ENVIAR PRONÓSTICO</button>
+                    <div id="sendStatus8am" class="status-msg"></div>
+
+                    <hr>
+
+                    <h3>🏆 Marcar Número GANADOR - Sorteo 8:00 AM</h3>
+                    <div class="winner-select">
+                        <label>🎯 Número GANADOR Pick 2 (2 dígitos):</label>
+                        <select id="winnerPick2_8am">
+                            <option value="">-- Seleccionar --</option>
+                        </select>
+                        <button id="setWinner8am" class="btn-win" style="margin-top:0.5rem;"><i class="fas fa-trophy"></i> MARCAR GANADOR 8:00 AM</button>
+                    </div>
+                    <div id="winnerStatus8am" class="status-msg"></div>
+                </div>
+            </div>
+
+            <div id="subtab4pm" class="subtab-content">
+                <div class="card">
+                    <h2><i class="fas fa-moon"></i> Pronóstico Sorteo 4:00 PM</h2>
+                    <div class="current-status" id="status4pm"><i class="fas fa-spinner fa-pulse"></i> Cargando...</div>
+
+                    <div class="numbers-container">
+                        <div class="category-header">
+                            <span class="category-title strong-title">🔥 Números FUERTES (10 - 70%)</span>
+                            <button class="btn-select-number" onclick="openNumberModal('4pm', 'strong', 10)"><i class="fas fa-plus"></i> Seleccionar 10</button>
+                        </div>
+                        <div id="strongNumbersList4pm" class="numbers-list"></div>
+                    </div>
+
+                    <div class="numbers-container">
+                        <div class="category-header">
+                            <span class="category-title medium-title">⭐ Números MEDIOS (15 - 20%)</span>
+                            <button class="btn-select-number" onclick="openNumberModal('4pm', 'medium', 15)"><i class="fas fa-plus"></i> Seleccionar 15</button>
+                        </div>
+                        <div id="mediumNumbersList4pm" class="numbers-list"></div>
+                    </div>
+
+                    <div class="numbers-container">
+                        <div class="category-header">
+                            <span class="category-title tactical-title">🌟 Números TÁCTICOS (15 - 10%)</span>
+                            <button class="btn-select-number" onclick="openNumberModal('4pm', 'tactical', 15)"><i class="fas fa-plus"></i> Seleccionar 15</button>
+                        </div>
+                        <div id="tacticalNumbersList4pm" class="numbers-list"></div>
+                    </div>
+
+                    <button id="sendForecast4pm" class="btn-send"><i class="fas fa-paper-plane"></i> ENVIAR PRONÓSTICO</button>
+                    <div id="sendStatus4pm" class="status-msg"></div>
+
+                    <hr>
+
+                    <h3>🏆 Marcar Número GANADOR - Sorteo 4:00 PM</h3>
+                    <div class="winner-select">
+                        <label>🎯 Número GANADOR Pick 2 (2 dígitos):</label>
+                        <select id="winnerPick2_4pm">
+                            <option value="">-- Seleccionar --</option>
+                        </select>
+                        <button id="setWinner4pm" class="btn-win" style="margin-top:0.5rem;"><i class="fas fa-trophy"></i> MARCAR GANADOR 4:00 PM</button>
+                    </div>
+                    <div id="winnerStatus4pm" class="status-msg"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabResultados" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-chart-line"></i> Resultados Oficiales</h2>
+                <div class="hora-info"><i class="fas fa-clock"></i> Horarios: <strong>1:35 PM</strong> y <strong>9:50 PM</strong> (Hora Cuba)</div>
+                <p style="margin-bottom:1rem;">Envía resultados de <strong>2 dígitos</strong> (ejemplo: 42)</p>
+                
+                <div class="winner-select">
+                    <label>🎯 Resultado (2 dígitos):</label>
+                    <input type="text" id="resultadoPick2" placeholder="Ej: 42" maxlength="2">
+                </div>
+                <div class="winner-select">
+                    <label>⏰ Horario:</label>
+                    <select id="resultadoHorario">
+                        <option value="1:35 PM">1:35 PM</option>
+                        <option value="9:50 PM">9:50 PM</option>
+                    </select>
+                </div>
+                <div class="winner-select">
+                    <label>📅 Fecha:</label>
+                    <input type="date" id="resultadoFecha" value="">
+                </div>
+                <div class="winner-select">
+                    <label>📝 Nota adicional:</label>
+                    <textarea id="resultadoNota" rows="2" placeholder="Ej: Sorteo realizado el día de hoy..."></textarea>
+                </div>
+                <button id="btnEnviarResultado" class="btn-info"><i class="fas fa-paper-plane"></i> Enviar Resultado</button>
+                <div id="resultadoStatus" class="status-msg"></div>
+            </div>
+
+            <div class="card">
+                <h2><i class="fas fa-list"></i> Últimos Resultados</h2>
+                <div id="ultimosResultadosList"></div>
+            </div>
+        </div>
+
+        <div id="tabNoticias" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-newspaper"></i> Publicar Noticia</h2>
+                <input type="text" id="newsTitle" placeholder="Título">
+                <textarea id="newsContent" rows="4" placeholder="Contenido..."></textarea>
+                <select id="newsType">
+                    <option value="noticia">📰 Noticia General</option>
+                    <option value="estrategia">🎯 Jugada Estratégica</option>
+                    <option value="alerta">⚠️ Alerta Importante</option>
+                </select>
+                <button id="btnPublicarNoticia"><i class="fas fa-paper-plane"></i> Publicar</button>
+                <div id="newsStatus" class="status-msg"></div>
+            </div>
+            <div class="card">
+                <h2><i class="fas fa-list"></i> Noticias Publicadas</h2>
+                <div id="newsList"></div>
+            </div>
+        </div>
+
+        <div id="tabPagos" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-credit-card"></i> Solicitudes Pendientes</h2>
+                <div id="paymentsList"></div>
+            </div>
+        </div>
+
+        <div id="tabHistorial" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-history"></i> Historial de Ganadores</h2>
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="numberModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Seleccionar Números</h3>
+            <button class="close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="modalNumbersGrid" class="numbers-grid-modal"></div>
+        <div class="selected-count" id="selectedCount">Seleccionados: 0</div>
+        <div class="modal-buttons">
+            <button id="modalConfirmBtn" class="btn-secondary">Confirmar</button>
+            <button onclick="closeModal()" style="background:#555;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-analytics.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, update, onValue, push, remove } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+    
+    const firebaseConfig = {
+        apiKey: "AIzaSyCEPeXpuaklQ93LXdsILGefCiZMrBMKWTE",
+        authDomain: "lotocu-4ee2b.firebaseapp.com",
+        projectId: "lotocu-4ee2b",
+        storageBucket: "lotocu-4ee2b.firebasestorage.app",
+        messagingSenderId: "241691501470",
+        appId: "1:241691501470:web:ec200738c0ecaa7cedac8f",
+        measurementId: "G-1FFWG6HQ66"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    
+    let currentModalContext = { sorteio: '', category: '', maxCount: 0 };
+    let tempSelectedNumbers = [];
+    
+    window.openNumberModal = function(sorteio, category, maxCount) {
+        currentModalContext = { sorteio, category, maxCount };
+        const containerId = `${category}NumbersList${sorteio === '8am' ? '8am' : '4pm'}`;
+        const container = document.getElementById(containerId);
+        const existingNumbers = [];
+        if (container) {
+            const badges = container.querySelectorAll('.number-badge span:first-child');
+            badges.forEach(badge => existingNumbers.push(badge.textContent));
+        }
+        tempSelectedNumbers = [...existingNumbers];
+        
+        document.getElementById('modalTitle').innerHTML = `Seleccionar ${maxCount} números ${category === 'strong' ? 'FUERTES 🔥' : category === 'medium' ? 'MEDIOS ⭐' : 'TÁCTICOS 🌟'}`;
+        
+        const grid = document.getElementById('modalNumbersGrid');
+        grid.innerHTML = '';
+        for (let i = 0; i <= 99; i++) {
+            const num = i.toString().padStart(2, '0');
+            const div = document.createElement('div');
+            div.className = 'number-option';
+            if (tempSelectedNumbers.includes(num)) div.classList.add('selected');
+            div.textContent = num;
+            div.onclick = () => toggleNumberSelection(num);
+            grid.appendChild(div);
+        }
+        updateSelectedCount();
+        document.getElementById('numberModal').style.display = 'block';
+    };
+    
+    function toggleNumberSelection(num) {
+        const index = tempSelectedNumbers.indexOf(num);
+        if (index === -1) {
+            if (tempSelectedNumbers.length < currentModalContext.maxCount) {
+                tempSelectedNumbers.push(num);
+            } else {
+                alert(`Solo puedes seleccionar ${currentModalContext.maxCount} números`);
+                return;
+            }
+        } else {
+            tempSelectedNumbers.splice(index, 1);
+        }
+        const grid = document.getElementById('modalNumbersGrid');
+        const items = grid.children;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].textContent === num) {
+                if (tempSelectedNumbers.includes(num)) items[i].classList.add('selected');
+                else items[i].classList.remove('selected');
+            }
+        }
+        updateSelectedCount();
+    }
+    
+    function updateSelectedCount() {
+        document.getElementById('selectedCount').innerHTML = `Seleccionados: ${tempSelectedNumbers.length} / ${currentModalContext.maxCount}`;
+    }
+    
+    window.closeModal = function() { document.getElementById('numberModal').style.display = 'none'; };
+    
+    document.getElementById('modalConfirmBtn').onclick = () => {
+        if (tempSelectedNumbers.length !== currentModalContext.maxCount) {
+            alert(`Debes seleccionar exactamente ${currentModalContext.maxCount} números`);
+            return;
+        }
+        const containerId = `${currentModalContext.category}NumbersList${currentModalContext.sorteio === '8am' ? '8am' : '4pm'}`;
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        tempSelectedNumbers.sort().forEach(num => {
+            const badge = document.createElement('div');
+            badge.className = 'number-badge';
+            badge.innerHTML = `<span>${num}</span><button onclick="removeNumber('${currentModalContext.sorteio}', '${currentModalContext.category}', '${num}')"><i class="fas fa-times"></i></button>`;
+            container.appendChild(badge);
+        });
+        closeModal();
+    };
+    
+    window.removeNumber = function(sorteio, category, num) {
+        const containerId = `${category}NumbersList${sorteio === '8am' ? '8am' : '4pm'}`;
+        const container = document.getElementById(containerId);
+        const badges = container.querySelectorAll('.number-badge');
+        for (let badge of badges) {
+            const span = badge.querySelector('span');
+            if (span && span.textContent === num) { badge.remove(); break; }
+        }
+    };
+    
+    function getNumbersFromList(sorteio, category) {
+        const containerId = `${category}NumbersList${sorteio === '8am' ? '8am' : '4pm'}`;
+        const container = document.getElementById(containerId);
+        const numbers = [];
+        if (container) {
+            const badges = container.querySelectorAll('.number-badge span:first-child');
+            badges.forEach(badge => numbers.push(badge.textContent));
+        }
+        return numbers;
+    }
+    
+    async function loadForecast(sorteio) {
+        const forecastRef = ref(db, `sorteos/${sorteio}/forecast`);
+        const snapshot = await get(forecastRef);
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            const strong = data.pick2?.strong || [];
+            const medium = data.pick2?.medium || [];
+            const tactical = data.pick2?.tactical || [];
+            
+            const strongContainer = document.getElementById(`strongNumbersList${sorteio === '8am' ? '8am' : '4pm'}`);
+            const mediumContainer = document.getElementById(`mediumNumbersList${sorteio === '8am' ? '8am' : '4pm'}`);
+            const tacticalContainer = document.getElementById(`tacticalNumbersList${sorteio === '8am' ? '8am' : '4pm'}`);
+            
+            strongContainer.innerHTML = ''; mediumContainer.innerHTML = ''; tacticalContainer.innerHTML = '';
+            
+            strong.forEach(num => { const badge = document.createElement('div'); badge.className = 'number-badge'; badge.innerHTML = `<span>${num}</span><button onclick="removeNumber('${sorteio}', 'strong', '${num}')"><i class="fas fa-times"></i></button>`; strongContainer.appendChild(badge); });
+            medium.forEach(num => { const badge = document.createElement('div'); badge.className = 'number-badge'; badge.innerHTML = `<span>${num}</span><button onclick="removeNumber('${sorteio}', 'medium', '${num}')"><i class="fas fa-times"></i></button>`; mediumContainer.appendChild(badge); });
+            tactical.forEach(num => { const badge = document.createElement('div'); badge.className = 'number-badge'; badge.innerHTML = `<span>${num}</span><button onclick="removeNumber('${sorteio}', 'tactical', '${num}')"><i class="fas fa-times"></i></button>`; tacticalContainer.appendChild(badge); });
+            
+            const allNumbers = [...strong, ...medium, ...tactical];
+            const selectPick2 = document.getElementById(`winnerPick2_${sorteio === '8am' ? '8am' : '4pm'}`);
+            if (selectPick2) {
+                selectPick2.innerHTML = '<option value="">-- Seleccionar --</option>';
+                allNumbers.sort((a,b) => parseInt(a)-parseInt(b)).forEach(num => {
+                    const option = document.createElement('option');
+                    option.value = num;
+                    let category = '';
+                    if (strong.includes(num)) category = '🔥 FUERTE 70%';
+                    else if (medium.includes(num)) category = '⭐ MEDIO 20%';
+                    else category = '🌟 TÁCTICO 10%';
+                    option.textContent = `${num} (${category})`;
+                    selectPick2.appendChild(option);
+                });
+            }
+            const statusDiv = document.getElementById(`status${sorteio === '8am' ? '8am' : '4pm'}`);
+            statusDiv.innerHTML = `<span style="color:#4caf50;">✅ Pronóstico cargado - ${data.date || new Date(data.timestamp).toLocaleDateString()}</span>`;
+        } else {
+            const statusDiv = document.getElementById(`status${sorteio === '8am' ? '8am' : '4pm'}`);
+            statusDiv.innerHTML = '<span style="color:#FF8C00;">⚠️ Sin pronóstico</span>';
+        }
+    }
+    
+    async function sendForecast(sorteio) {
+        const strong = getNumbersFromList(sorteio, 'strong');
+        const medium = getNumbersFromList(sorteio, 'medium');
+        const tactical = getNumbersFromList(sorteio, 'tactical');
+        
+        if (strong.length !== 10 || medium.length !== 15 || tactical.length !== 15) {
+            alert(`❌ Completa todos los números (10 Fuertes, 15 Medios, 15 Tácticos)`);
+            return;
+        }
+        const allNumbers = [...strong, ...medium, ...tactical];
+        const unique = new Set(allNumbers);
+        if (unique.size !== 40) { alert('❌ Todos los números deben ser únicos'); return; }
+        
+        const forecast = { 
+            date: new Date().toLocaleDateString('es-ES'), 
+            timestamp: new Date().toISOString(), 
+            pick2: { strong, medium, tactical, all: allNumbers } 
+        };
+        await set(ref(db, `sorteos/${sorteio}/forecast`), forecast);
+        const statusDiv = document.getElementById(`sendStatus${sorteio === '8am' ? '8am' : '4pm'}`);
+        statusDiv.innerHTML = '✅ ¡Pronóstico enviado!';
+        setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
+        loadForecast(sorteio);
+    }
+    
+    async function setWinner(sorteio, horarioTexto) {
+        const pick2Select = document.getElementById(`winnerPick2_${sorteio === '8am' ? '8am' : '4pm'}`);
+        const pick2Winner = pick2Select.value;
+        if (!pick2Winner) { alert('❌ Selecciona el número ganador'); return; }
+        
+        const winnerData = { 
+            pick2: pick2Winner, 
+            timestamp: new Date().toISOString(), 
+            marked: true, 
+            fecha: new Date().toLocaleDateString('es-ES'), 
+            hora: new Date().toLocaleTimeString('es-ES'),
+            sorteo: sorteio === '8am' ? '8:00 AM' : '4:00 PM'
+        };
+        
+        // Guardar ganador
+        await set(ref(db, `sorteos/${sorteio}/winner`), winnerData);
+        
+        // Guardar en historial
+        const historyRef = ref(db, 'historial_ganadores');
+        const newHistoryRef = push(historyRef);
+        await set(newHistoryRef, { 
+            sorteo: sorteio === '8am' ? '8:00 AM' : '4:00 PM', 
+            numero: pick2Winner, 
+            fecha: new Date().toLocaleDateString('es-ES'), 
+            hora: new Date().toLocaleTimeString('es-ES') 
+        });
+        
+        const statusDiv = document.getElementById(`winnerStatus${sorteio === '8am' ? '8am' : '4pm'}`);
+        statusDiv.innerHTML = `✅ ¡Número ${pick2Winner} marcado como GANADOR del sorteo ${sorteio === '8am' ? '8:00 AM' : '4:00 PM'}!`;
+        setTimeout(() => { statusDiv.innerHTML = ''; }, 4000);
+        
+        loadHistorial();
+    }
+    
+    async function cargarUltimosResultados() {
+        const resultadosRef = ref(db, 'resultados_oficiales');
+        onValue(resultadosRef, (snapshot) => {
+            const resultados = snapshot.val();
+            const container = document.getElementById('ultimosResultadosList');
+            container.innerHTML = '';
+            if (resultados) {
+                const resultadosArray = Object.entries(resultados).reverse();
+                resultadosArray.slice(0, 10).forEach(([id, res]) => {
+                    const div = document.createElement('div');
+                    div.className = 'resultado-item';
+                    div.innerHTML = `<p><strong>🎯 ${res.numero}</strong> - ${res.horario}</p><p>📅 ${res.fecha}</p><p>📝 ${res.nota || ''}</p>`;
+                    container.appendChild(div);
+                });
+            }
+            if (container.innerHTML === '') container.innerHTML = '<p>No hay resultados</p>';
+        });
+    }
+    
+    document.getElementById('btnEnviarResultado')?.addEventListener('click', async () => {
+        let numero = document.getElementById('resultadoPick2').value.trim();
+        const horario = document.getElementById('resultadoHorario').value;
+        const fecha = document.getElementById('resultadoFecha').value;
+        const nota = document.getElementById('resultadoNota').value.trim();
+        if (!numero) { alert('Ingresa el resultado'); return; }
+        while (numero.length < 2) { numero = '0' + numero; }
+        if (numero.length > 2) { numero = numero.substring(0, 2); }
+        const resultadoRef = push(ref(db, 'resultados_oficiales'));
+        await set(resultadoRef, { numero, horario, fecha: fecha || new Date().toLocaleDateString('es-ES'), nota: nota || 'Resultado oficial', enviadoEn: new Date().toLocaleString('es-ES'), timestamp: new Date().toISOString() });
+        document.getElementById('resultadoStatus').innerHTML = '✅ Enviado';
+        setTimeout(() => { document.getElementById('resultadoStatus').innerHTML = ''; }, 3000);
+        document.getElementById('resultadoPick2').value = '';
+        document.getElementById('resultadoNota').value = '';
+    });
+    
+    async function cargarNoticias() {
+        const noticiasRef = ref(db, 'noticias');
+        onValue(noticiasRef, (snapshot) => {
+            const noticias = snapshot.val();
+            const container = document.getElementById('newsList');
+            container.innerHTML = '';
+            if (noticias) {
+                Object.entries(noticias).reverse().forEach(([id, n]) => {
+                    const div = document.createElement('div');
+                    div.className = 'news-item';
+                    div.innerHTML = `<p><strong>${n.titulo}</strong></p><p>${n.contenido}</p><p style="font-size:0.7rem;">${n.fecha}</p><button class="btn-reject" onclick="eliminarNoticia('${id}')">Eliminar</button>`;
+                    container.appendChild(div);
+                });
+            }
+        });
+    }
+    
+    window.eliminarNoticia = async (id) => { await remove(ref(db, `noticias/${id}`)); alert('Eliminada'); };
+    
+    document.getElementById('btnPublicarNoticia')?.addEventListener('click', async () => {
+        const titulo = document.getElementById('newsTitle').value.trim();
+        const contenido = document.getElementById('newsContent').value.trim();
+        const tipo = document.getElementById('newsType').value;
+        if (!titulo || !contenido) { alert('Completa los campos'); return; }
+        const noticiaRef = push(ref(db, 'noticias'));
+        await set(noticiaRef, { titulo, contenido, tipo, fecha: new Date().toLocaleDateString('es-ES'), hora: new Date().toLocaleTimeString('es-ES'), timestamp: new Date().toISOString() });
+        document.getElementById('newsTitle').value = '';
+        document.getElementById('newsContent').value = '';
+        document.getElementById('newsStatus').innerHTML = '✅ Publicada';
+        setTimeout(() => { document.getElementById('newsStatus').innerHTML = ''; }, 3000);
+    });
+    
+    async function loadPayments() {
+        const paymentsRef = ref(db, 'solicitudes_pago');
+        onValue(paymentsRef, (snapshot) => {
+            const payments = snapshot.val();
+            const container = document.getElementById('paymentsList');
+            container.innerHTML = '';
+            if (payments) {
+                Object.entries(payments).forEach(([id, p]) => {
+                    if (p.estado === 'pendiente') {
+                        const div = document.createElement('div');
+                        div.className = 'payment-request';
+                        div.innerHTML = `<p><strong>${p.usuarioEmail}</strong></p><p>Comprobante: ${p.comprobante}</p><p>${p.fecha}</p><button class="btn-approve" onclick="aprobarPago('${id}', '${p.usuarioId}')">Aprobar</button><button class="btn-reject" onclick="rechazarPago('${id}')">Rechazar</button>`;
+                        container.appendChild(div);
+                    }
+                });
+            }
+        });
+    }
+    
+    window.aprobarPago = async (id, uid) => {
+        await update(ref(db), { [`solicitudes_pago/${id}/estado`]: 'aprobado' });
+        const exp = new Date(); exp.setDate(exp.getDate() + 30);
+        await set(ref(db, `usuarios/${uid}/membresia`), { activa: true, fechaInicio: new Date().toISOString(), fechaExpiracion: exp.toISOString() });
+        alert('Aprobado');
+        loadPayments();
+    };
+    
+    window.rechazarPago = async (id) => { await update(ref(db), { [`solicitudes_pago/${id}/estado`]: 'rechazado' }); alert('Rechazado'); loadPayments(); };
+    
+    async function loadHistorial() {
+        const historyRef = ref(db, 'historial_ganadores');
+        onValue(historyRef, (snapshot) => {
+            const history = snapshot.val();
+            const container = document.getElementById('historyList');
+            container.innerHTML = '';
+            if (history) {
+                Object.entries(history).reverse().forEach(([id, item]) => {
+                    const div = document.createElement('div');
+                    div.className = 'winner-history-item';
+                    div.innerHTML = `<span>📅 ${item.fecha}</span><span>${item.sorteo}</span><span>🏆 ${item.numero}</span>`;
+                    container.appendChild(div);
+                });
+            }
+        });
+    }
+    
+    document.getElementById('sendForecast8am')?.addEventListener('click', () => sendForecast('8am'));
+    document.getElementById('sendForecast4pm')?.addEventListener('click', () => sendForecast('4pm'));
+    document.getElementById('setWinner8am')?.addEventListener('click', () => setWinner('8am', '8:00 AM'));
+    document.getElementById('setWinner4pm')?.addEventListener('click', () => setWinner('4pm', '4:00 PM'));
+    
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            const id = btn.dataset.tab;
+            if (id === 'pronosticos') document.getElementById('tabPronosticos').classList.add('active');
+            else if (id === 'resultados') { document.getElementById('tabResultados').classList.add('active'); cargarUltimosResultados(); }
+            else if (id === 'noticias') { document.getElementById('tabNoticias').classList.add('active'); cargarNoticias(); }
+            else if (id === 'pagos') { document.getElementById('tabPagos').classList.add('active'); loadPayments(); }
+            else if (id === 'historial') { document.getElementById('tabHistorial').classList.add('active'); loadHistorial(); }
+        });
+    });
+    
+    document.querySelectorAll('[data-subtab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const parent = btn.closest('.tab-content');
+            parent.querySelectorAll('[data-subtab]').forEach(b => b.classList.remove('active'));
+            parent.querySelectorAll('.subtab-content').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            const id = btn.dataset.subtab;
+            if (id === 'sorteo8am') document.getElementById('subtab8am').classList.add('active');
+            else document.getElementById('subtab4pm').classList.add('active');
+        });
+    });
+    
+    document.getElementById('btnAdminLogin').addEventListener('click', async () => {
+        const email = document.getElementById('adminEmail').value.trim();
+        const pwd = document.getElementById('adminPassword').value;
+        try { await signInWithEmailAndPassword(auth, email, pwd); document.getElementById('loginError').innerText = ''; } 
+        catch (e) { document.getElementById('loginError').innerText = 'Error: Correo o contraseña incorrectos'; }
+    });
+    
+    document.getElementById('adminLogout').addEventListener('click', async () => { await signOut(auth); });
+    
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminEmailDisplay').innerText = user.email;
+            await loadForecast('8am'); await loadForecast('4pm');
+            cargarUltimosResultados(); cargarNoticias(); loadPayments(); loadHistorial();
+        } else {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
