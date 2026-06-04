@@ -2375,6 +2375,7 @@
         let unsubscribeRiddle = null;
         let unsubscribeDailyProb = null;
         let unsubscribeTransactions = null;
+        let unsubscribeGame = null;
         
         let loadingProgress = 0;
         let loadingInterval;
@@ -2407,9 +2408,10 @@
         let waitingForOpponent = false;
         let selectedBet = null;
         let gameLoopInterval = null;
-        let selectedRow = null;
-        let selectedCol = null;
-        let validMoves = [];
+        let selectedPieceRow = null;
+        let selectedPieceCol = null;
+        let validMovesList = [];
+        let queueUnsubscribe = null;
         
         const COSTO_MEMBRESIA = 50;
         
@@ -3197,6 +3199,7 @@
         let unsubscribeRiddle = null;
         let unsubscribeDailyProb = null;
         let unsubscribeTransactions = null;
+        let unsubscribeGame = null;
         
         let loadingProgress = 0;
         let loadingInterval;
@@ -3229,9 +3232,10 @@
         let waitingForOpponent = false;
         let selectedBet = null;
         let gameLoopInterval = null;
-        let selectedRow = null;
-        let selectedCol = null;
-        let validMoves = [];
+        let selectedPieceRow = null;
+        let selectedPieceCol = null;
+        let validMovesList = [];
+        let queueUnsubscribe = null;
         
         const COSTO_MEMBRESIA = 50;
         
@@ -3925,7 +3929,7 @@
                 document.getElementById('cupEarnedStat').innerText = totalCupEarned; 
                 const tbody = document.getElementById('referralsTableBody'); 
                 tbody.innerHTML = ''; 
-                if (referralsList.length === 0) tbody.innerHTML = '<tr><td colspan="4" class="text-center">Aún no has invitado a nadie. ¡Comparte tu código!</td></tr>'; 
+                if (referralsList.length === 0) tbody.innerHTML = '</td><td colspan="4" class="text-center">Aún no has invitado a nadie. ¡Comparte tu código!</td></tr>'; 
                 else referralsList.forEach(ref => { const row = tbody.insertRow(); row.insertCell(0).innerHTML = `<strong>${ref.email}</strong>`; row.insertCell(1).innerText = new Date(ref.date).toLocaleDateString(); row.insertCell(2).innerHTML = ref.isActive ? '<span class="badge-win">✅ Activa</span>' : '<span style="color: var(--danger);">❌ Inactiva</span>'; row.insertCell(3).innerHTML = ref.rewarded ? '<span class="badge-rewarded">💰 50 cup</span>' : (ref.isActive ? '<span class="badge-pending">⏳ Pendiente</span>' : '-'); }); 
                 await checkAndRewardReferralsWithCup(currentUser.email); 
                 await checkAndRewardReferrals(currentUser.email); 
@@ -4051,16 +4055,16 @@
         
         function createInitialBoard() {
             const board = Array(8).fill().map(() => Array(8).fill(null));
-            // Blancas (fichas blancas arriba - filas 0,1,2)
-            for (let row = 0; row < 3; row++) {
+            // Blancas (fichas blancas abajo - filas 5,6,7 para que el usuario las vea abajo)
+            for (let row = 5; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     if ((row + col) % 2 === 1) {
                         board[row][col] = { type: 'piece', color: 'white', king: false };
                     }
                 }
             }
-            // Negras (fichas negras abajo - filas 5,6,7)
-            for (let row = 5; row < 8; row++) {
+            // Negras (fichas negras arriba - filas 0,1,2)
+            for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 8; col++) {
                     if ((row + col) % 2 === 1) {
                         board[row][col] = { type: 'piece', color: 'black', king: false };
@@ -4075,18 +4079,11 @@
             const piece = board[row][col];
             if (!piece || piece.color !== color) return moves;
             
-            const directions = piece.king ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (color === 'white' ? [[1,-1],[1,1]] : [[-1,-1],[-1,1]]);
+            // Direcciones: blancas suben (hacia filas menores), negras bajan (hacia filas mayores)
+            const directions = piece.king ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (color === 'white' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
             
-            // Movimientos normales
-            for (const [dr, dc] of directions) {
-                const newRow = row + dr;
-                const newCol = col + dc;
-                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && !board[newRow][newCol]) {
-                    moves.push({ toRow: newRow, toCol: newCol, captures: [] });
-                }
-            }
-            
-            // Capturas
+            // Primero buscar capturas (son obligatorias)
+            let captureMoves = [];
             for (const [dr, dc] of directions) {
                 const midRow = row + dr;
                 const midCol = col + dc;
@@ -4095,7 +4092,20 @@
                 if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && 
                     board[midRow] && board[midRow][midCol] && board[midRow][midCol].color !== color &&
                     !board[newRow][newCol]) {
-                    moves.push({ toRow: newRow, toCol: newCol, captures: [{ row: midRow, col: midCol }] });
+                    captureMoves.push({ toRow: newRow, toCol: newCol, captures: [{ row: midRow, col: midCol }] });
+                }
+            }
+            
+            if (captureMoves.length > 0) {
+                return captureMoves;
+            }
+            
+            // Movimientos normales
+            for (const [dr, dc] of directions) {
+                const newRow = row + dr;
+                const newCol = col + dc;
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && !board[newRow][newCol]) {
+                    moves.push({ toRow: newRow, toCol: newCol, captures: [] });
                 }
             }
             
@@ -4126,7 +4136,7 @@
             }
             
             // Coronación a dama
-            if ((piece.color === 'white' && toRow === 7) || (piece.color === 'black' && toRow === 0)) {
+            if ((piece.color === 'white' && toRow === 0) || (piece.color === 'black' && toRow === 7)) {
                 newBoard[toRow][toCol].king = true;
             }
             
@@ -4146,7 +4156,7 @@
                 container.innerHTML = `
                     <div class="card waiting-room">
                         <h2>♟️ Damas Españolas</h2>
-                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Selecciona tu apuesta y espera un oponente</p>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Selecciona tu apuesta (Tú serás las fichas BLANCAS abajo)</p>
                         <div class="bet-options">
                             <div class="bet-btn" data-bet="20">20 Cup</div>
                             <div class="bet-btn" data-bet="50">50 Cup</div>
@@ -4200,7 +4210,8 @@
             waitingForOpponent = true;
             renderCheckersSection();
             
-            const queueRef = db.collection('gameQueue').doc('checkers');
+            // Crear o unirse a una cola en Firestore
+            const queueRef = db.collection('damasQueue').doc('active');
             
             try {
                 const queueDoc = await queueRef.get();
@@ -4217,9 +4228,11 @@
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
-                    const unsubscribe = queueRef.onSnapshot(async (snap) => {
+                    // Escuchar cambios en la cola
+                    if (queueUnsubscribe) queueUnsubscribe();
+                    queueUnsubscribe = queueRef.onSnapshot(async (snap) => {
                         if (snap.exists && snap.data().playerEmail !== currentUser.email && snap.data().betAmount === selectedBet) {
-                            unsubscribe();
+                            queueUnsubscribe();
                             opponent = snap.data().playerEmail;
                             await queueRef.delete();
                             await createGame(opponent, selectedBet);
@@ -4227,7 +4240,10 @@
                     });
                     
                     setTimeout(() => {
-                        unsubscribe();
+                        if (queueUnsubscribe) {
+                            queueUnsubscribe();
+                            queueUnsubscribe = null;
+                        }
                         if (waitingForOpponent) {
                             cancelQueue();
                             showDialog('Espera agotada', 'No se encontró oponente. Intenta de nuevo más tarde.');
@@ -4243,9 +4259,10 @@
         }
         
         async function createGame(opponentEmail, betAmount) {
-            const gameId = `${currentUser.email}_${opponentEmail}_${Date.now()}`;
+            const gameId = `${Date.now()}_${currentUser.email}_${opponentEmail}`;
             const initialBoard = createInitialBoard();
             
+            // Descontar la apuesta del jugador que crea la partida
             await updateUserBalance(userBalance - betAmount);
             
             currentGame = {
@@ -4253,7 +4270,7 @@
                 players: { white: currentUser.email, black: opponentEmail },
                 betAmount: betAmount,
                 board: initialBoard,
-                turn: 'white',
+                turn: 'white', // Las blancas empiezan (blancas = creador)
                 status: 'active',
                 winner: null,
                 abandonedBy: null,
@@ -4262,18 +4279,18 @@
                 lastMove: null
             };
             
-            await db.collection('checkersGames').doc(gameId).set(currentGame);
+            await db.collection('damasGames').doc(gameId).set(currentGame);
             waitingForOpponent = false;
             startGameMonitoring(gameId);
             renderCheckersSection();
-            showDialog('Partida iniciada', `Tu apuesta de ${betAmount} Cup ha sido registrada. ¡Las blancas comienzan!`);
+            showDialog('Partida iniciada', `Tu apuesta de ${betAmount} Cup ha sido registrada. ¡Las BLANCAS (tú) comienzan!`);
         }
         
         function startGameMonitoring(gameId) {
             if (gameLoopInterval) clearInterval(gameLoopInterval);
             gameLoopInterval = setInterval(async () => {
                 if (!currentGame || currentGame.id !== gameId) return;
-                const gameDoc = await db.collection('checkersGames').doc(gameId).get();
+                const gameDoc = await db.collection('damasGames').doc(gameId).get();
                 if (gameDoc.exists) {
                     const updatedGame = gameDoc.data();
                     if (updatedGame.status !== 'active') {
@@ -4301,13 +4318,11 @@
                             const winner = updatedGame.abandonedBy === currentUser.email ? 
                                 (updatedGame.players.white === currentUser.email ? updatedGame.players.black : updatedGame.players.white) : 
                                 currentUser.email;
-                            await db.collection('checkersGames').doc(gameId).update({
+                            await db.collection('damasGames').doc(gameId).update({
                                 status: 'finished',
                                 winner: winner,
                                 finishedAt: new Date().toISOString()
                             });
-                        } else if (updatedGame.abandonedBy === currentUser.email && document.getElementById('checkersSection').style.display !== 'none') {
-                            renderGameBoard();
                         }
                     } else {
                         currentGame = updatedGame;
@@ -4331,7 +4346,7 @@
                     <div class="game-info">
                         <div>💰 Apuesta: ${currentGame.betAmount} Cup (80% para el ganador)</div>
                         <div class="turn-indicator">Turno: ${currentGame.turn === 'white' ? '⚪ Blancas' : '⚫ Negras'}</div>
-                        <div>🎨 Eres: ${myColor === 'white' ? '⚪ Blancas' : '⚫ Negras'}</div>
+                        <div>🎨 Eres: ${myColor === 'white' ? '⚪ Blancas (abajo)' : '⚫ Negras (arriba)'}</div>
                     </div>
                     ${currentGame.abandonedBy ? `<div class="abandon-timer">⏰ ${currentGame.abandonedBy === currentUser.email ? 'Abandonaste la partida' : 'Oponente abandonó'} - Tiempo para reconectar: ${abandonTimeLeft} segundos</div>` : ''}
                     <div class="checkers-board" id="checkersBoard"></div>
@@ -4362,7 +4377,7 @@
                         cell.appendChild(pieceDiv);
                     }
                     
-                    if (selectedRow === row && selectedCol === col) {
+                    if (selectedPieceRow === row && selectedPieceCol === col) {
                         cell.classList.add('selected');
                     }
                     
@@ -4373,10 +4388,10 @@
                 }
             }
             
-            // Resaltar movimientos válidos si hay una ficha seleccionada
-            if (selectedRow !== null && validMoves.length > 0) {
+            // Resaltar movimientos válidos
+            if (selectedPieceRow !== null && validMovesList.length > 0) {
                 const cells = document.querySelectorAll('.checkers-cell');
-                validMoves.forEach(move => {
+                validMovesList.forEach(move => {
                     const idx = move.toRow * 8 + move.toCol;
                     if (cells[idx]) cells[idx].classList.add('valid-move');
                 });
@@ -4388,45 +4403,34 @@
             const myColor = currentGame.players.white === currentUser.email ? 'white' : 'black';
             if (currentGame.turn !== myColor) return;
             
-            if (selectedRow === null) {
+            if (selectedPieceRow === null) {
                 const piece = currentGame.board[row][col];
                 if (piece && piece.color === myColor) {
-                    selectedRow = row;
-                    selectedCol = col;
-                    validMoves = getValidMoves(currentGame.board, row, col, myColor);
+                    selectedPieceRow = row;
+                    selectedPieceCol = col;
+                    validMovesList = getValidMoves(currentGame.board, row, col, myColor);
                     renderGameBoard();
                 }
             } else {
-                const isValid = validMoves.some(m => m.toRow === row && m.toCol === col);
+                const isValid = validMovesList.some(m => m.toRow === row && m.toCol === col);
                 if (isValid) {
-                    const move = validMoves.find(m => m.toRow === row && m.toCol === col);
-                    const newBoard = makeMove(currentGame.board, selectedRow, selectedCol, move.toRow, move.toCol, move.captures);
+                    const move = validMovesList.find(m => m.toRow === row && m.toCol === col);
+                    const newBoard = makeMove(currentGame.board, selectedPieceRow, selectedPieceCol, move.toRow, move.toCol, move.captures);
                     const newTurn = currentGame.turn === 'white' ? 'black' : 'white';
                     
-                    db.collection('checkersGames').doc(currentGame.id).update({
+                    db.collection('damasGames').doc(currentGame.id).update({
                         board: newBoard,
                         turn: newTurn,
-                        lastMove: { from: [selectedRow, selectedCol], to: [move.toRow, move.toCol], timestamp: new Date().toISOString() }
-                    });
+                        lastMove: { from: [selectedPieceRow, selectedPieceCol], to: [move.toRow, move.toCol], timestamp: new Date().toISOString() }
+                    }).catch(err => console.error('Error al actualizar movimiento:', err));
                     
-                    // Verificar si el oponente aún tiene movimientos
-                    if (!hasAnyMove(newBoard, newTurn)) {
-                        const winner = currentGame.turn;
-                        db.collection('checkersGames').doc(currentGame.id).update({
-                            status: 'finished',
-                            winner: winner,
-                            finishedAt: new Date().toISOString()
-                        });
-                        showDialog('🎉 ¡Partida terminada!', `¡${winner === 'white' ? 'Blancas' : 'Negras'} ha ganado la partida!`);
-                    }
-                    
-                    selectedRow = null;
-                    selectedCol = null;
-                    validMoves = [];
+                    selectedPieceRow = null;
+                    selectedPieceCol = null;
+                    validMovesList = [];
                 } else {
-                    selectedRow = null;
-                    selectedCol = null;
-                    validMoves = [];
+                    selectedPieceRow = null;
+                    selectedPieceCol = null;
+                    validMovesList = [];
                     renderGameBoard();
                 }
             }
@@ -4435,7 +4439,7 @@
         async function abandonGame() {
             if (!currentGame || currentGame.status !== 'active') return;
             if (confirm('¿Seguro que quieres abandonar? Tendrás 3 minutos para reconectar o perderás la partida y la apuesta.')) {
-                await db.collection('checkersGames').doc(currentGame.id).update({
+                await db.collection('damasGames').doc(currentGame.id).update({
                     abandonedBy: currentUser.email,
                     abandonTime: new Date().toISOString()
                 });
@@ -4446,7 +4450,11 @@
         
         async function cancelQueue() {
             waitingForOpponent = false;
-            const queueRef = db.collection('gameQueue').doc('checkers');
+            if (queueUnsubscribe) {
+                queueUnsubscribe();
+                queueUnsubscribe = null;
+            }
+            const queueRef = db.collection('damasQueue').doc('active');
             const queueDoc = await queueRef.get();
             if (queueDoc.exists && queueDoc.data().playerEmail === currentUser.email) {
                 await queueRef.delete();
@@ -4457,14 +4465,14 @@
         async function loadMatchHistory() {
             const historyContainer = document.getElementById('matchHistoryList');
             if (!historyContainer) return;
-            const games = await db.collection('checkersGames')
+            const games = await db.collection('damasGames')
                 .where('players.white', '==', currentUser.email)
                 .where('status', '==', 'finished')
                 .orderBy('finishedAt', 'desc')
                 .limit(20)
                 .get();
             
-            const games2 = await db.collection('checkersGames')
+            const games2 = await db.collection('damasGames')
                 .where('players.black', '==', currentUser.email)
                 .where('status', '==', 'finished')
                 .orderBy('finishedAt', 'desc')
@@ -4520,7 +4528,7 @@
             if (section === 'iaPro') loadIAData();
             if (section === 'pick4Pro') renderPick4Content();
             if (section === 'slot') loadSlotData();
-            if (section === 'checkers') { selectedRow = null; selectedCol = null; validMoves = []; renderCheckersSection(); }
+            if (section === 'checkers') { selectedPieceRow = null; selectedPieceCol = null; validMovesList = []; renderCheckersSection(); }
             if (section === 'predictions') { const isActive = userMembership?.membershipActive && new Date(userMembership.membershipExpires) > new Date(); if (isActive && (!predictionsCache || !predictionsCache.numbers || predictionsCache.numbers.length === 0)) loadPredictionsWithLoading(); }
         }
         
@@ -4562,6 +4570,7 @@
             if (unsubscribeDailyProb) unsubscribeDailyProb(); 
             if (unsubscribeTransactions) unsubscribeTransactions(); 
             if (gameLoopInterval) clearInterval(gameLoopInterval);
+            if (queueUnsubscribe) queueUnsubscribe();
             auth.signOut(); 
             document.getElementById('dashboardScreen').style.display = 'none'; 
             document.getElementById('authScreen').style.display = 'flex'; 
@@ -4575,9 +4584,9 @@
             document.getElementById('referralCodeInput').value = ''; 
             currentGame = null;
             waitingForOpponent = false;
-            selectedRow = null;
-            selectedCol = null;
-            validMoves = [];
+            selectedPieceRow = null;
+            selectedPieceCol = null;
+            validMovesList = [];
         }
         
         const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
@@ -4641,14 +4650,15 @@
                 if (unsubscribeDailyProb) unsubscribeDailyProb(); 
                 if (unsubscribeTransactions) unsubscribeTransactions(); 
                 if (gameLoopInterval) clearInterval(gameLoopInterval);
+                if (queueUnsubscribe) queueUnsubscribe();
                 document.getElementById('dashboardScreen').style.display = 'none'; 
                 document.getElementById('authScreen').style.display = 'flex'; 
                 currentUser = null; 
                 currentGame = null;
                 waitingForOpponent = false;
-                selectedRow = null;
-                selectedCol = null;
-                validMoves = [];
+                selectedPieceRow = null;
+                selectedPieceCol = null;
+                validMovesList = [];
             } 
         });
     </script>
